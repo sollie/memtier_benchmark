@@ -1,24 +1,16 @@
-FROM ubuntu:22.04 as builder
-RUN apt-get update
+FROM alpine:latest as builder
 RUN \
-  DEBIAN_FRONTEND=noninteractive \
-  apt-get install -y \
-    build-essential autoconf automake libpcre3-dev libevent-dev \
-    pkg-config zlib1g-dev libssl-dev libboost-all-dev cmake flex
-COPY . /memtier_benchmark
-WORKDIR /memtier_benchmark
+  apk add \
+  make g++ autoconf automake libtool pkgconfig \
+  pcre-dev libevent-dev zlib-dev openssl-dev
+COPY . /src
+WORKDIR /src
 RUN autoreconf -ivf && ./configure && make && make install
 
-FROM ubuntu:22.04
+FROM alpine:latest
 LABEL Description="memtier_benchmark"
 COPY --from=builder /usr/local/bin/memtier_benchmark /usr/local/bin/memtier_benchmark
 RUN \
-  apt-get update && \
-  DEBIAN_FRONTEND=noninteractive \
-    apt-get install -y --no-install-recommends \
-      libevent-dev \
-  && \
-  apt-get clean && \
-  rm -rf /var/lib/apt/lists/
+  apk add libstdc++ pcre libevent zlib openssl bash
 
-ENTRYPOINT ["memtier_benchmark"]
+ENTRYPOINT ["tail", "-f", "/dev/null"]
